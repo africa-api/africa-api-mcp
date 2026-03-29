@@ -1,52 +1,23 @@
 # Africa API MCP Server
 
-An MCP (Model Context Protocol) server that connects Claude to the [Africa API](https://africa-api.com) — giving Claude direct access to comprehensive data on all 54 African nations.
+An [MCP](https://modelcontextprotocol.io) server that gives Claude direct access to the [Africa API](https://africa-api.com) — comprehensive data on all 54 African nations including economic indicators, markets, trade, government, elections, and policies.
 
-## What's Included
+## Quick Start
 
-**39 tools** across 9 domains:
-
-| Domain | Tools | Examples |
-|--------|-------|---------|
-| **Countries** | 4 | List countries, profiles, real-time signals |
-| **Indicators & Data** | 4 | 127+ indicators, time-series queries, rankings |
-| **Government** | 6 | Heads of state, cabinets, leadership terms |
-| **Elections** | 5 | Results, upcoming elections, country overviews |
-| **Markets** | 7 | Stock exchanges, tickers, price history, FX rates |
-| **Trade** | 4 | Bilateral flows, partners, product breakdowns |
-| **Policies** | 6 | Laws, regulations, timelines, lifecycle events |
-| **Sources** | 2 | Data provenance and coverage |
-| **Geographies** | 1 | Continent/region/subregion hierarchy |
-
-## Setup
-
-### 1. Install dependencies
-
-```bash
-cd africa-api-mcp
-pip install -e .
-```
-
-Or with `uv`:
-
-```bash
-uv pip install -e .
-```
-
-### 2. Get an API key
+### 1. Get an API key
 
 Sign up at [africa-api.com](https://africa-api.com) and create an API key from your dashboard.
 
-### 3. Configure Claude
+### 2. Connect to Claude
 
-Add this to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+**Claude Desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
   "mcpServers": {
     "africa-api": {
-      "command": "python",
-      "args": ["/path/to/africa-api-mcp/server.py"],
+      "command": "npx",
+      "args": ["-y", "africa-api-mcp"],
       "env": {
         "AFRICA_API_KEY": "your-api-key-here"
       }
@@ -55,14 +26,14 @@ Add this to your Claude Desktop config (`~/Library/Application Support/Claude/cl
 }
 ```
 
-Or for Claude Code (`~/.claude/settings.json`):
+**Claude Code** — add to `~/.claude/settings.json`:
 
 ```json
 {
   "mcpServers": {
     "africa-api": {
-      "command": "python",
-      "args": ["/path/to/africa-api-mcp/server.py"],
+      "command": "npx",
+      "args": ["-y", "africa-api-mcp"],
       "env": {
         "AFRICA_API_KEY": "your-api-key-here"
       }
@@ -71,38 +42,60 @@ Or for Claude Code (`~/.claude/settings.json`):
 }
 ```
 
-### Environment Variables
+Restart Claude and you're ready to go. No install step needed — `npx` handles it automatically.
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `AFRICA_API_KEY` | Yes | — | Your Africa API bearer token |
-| `AFRICA_API_BASE_URL` | No | `https://api.africa-api.com` | API base URL (override for local dev) |
+## What You Can Ask Claude
 
-## Usage Examples
+Once connected, Claude can answer questions like:
 
-Once connected, you can ask Claude things like:
-
-- "What's the current GDP of Nigeria compared to South Africa?"
-- "Show me the latest FX rates for East African currencies"
-- "Who is the current head of state of Kenya?"
-- "What are the upcoming elections in Africa?"
-- "What are Nigeria's top export products?"
+- "What's the GDP of Nigeria vs South Africa over the last 10 years?"
+- "Show me current FX rates for East African currencies"
+- "Who is the head of state of Kenya and when did they take office?"
+- "What elections are coming up in Africa this year?"
+- "What are Nigeria's top 5 export products?"
 - "Show me the policy timeline for Rwanda"
-- "Rank African countries by life expectancy in 2023"
+- "Rank African countries by life expectancy"
 - "What stocks are listed on the Nigerian Exchange?"
+- "Compare trade flows between Kenya and Tanzania"
+
+## Available Tools
+
+**40 tools** across 9 domains:
+
+| Domain | Tools | What It Covers |
+|--------|-------|----------------|
+| **Countries** | 4 | Country details, profiles, real-time signals for all 54 nations |
+| **Indicators & Data** | 4 | 127+ indicators (GDP, population, health, education, etc.), time-series queries, country rankings |
+| **Government** | 6 | Heads of state, cabinets, leadership terms — current and historical |
+| **Elections** | 5 | Election results, upcoming elections, country overviews |
+| **Markets** | 7 | Stock exchanges, listed securities, price history, FX rates |
+| **Trade** | 4 | Bilateral trade flows, top partners, product breakdowns |
+| **Policies** | 6 | Laws, regulations, policy timelines, lifecycle events |
+| **Sources** | 2 | Data provenance — World Bank, UN, central banks, etc. |
+| **Geographies** | 1 | Continent / region / subregion hierarchy |
+
+All tools are **read-only** with proper MCP safety annotations.
+
+## Configuration
+
+| Environment Variable | Required | Default | Description |
+|---------------------|----------|---------|-------------|
+| `AFRICA_API_KEY` | Yes | — | Your Africa API bearer token |
+| `AFRICA_API_BASE_URL` | No | `https://api.africa-api.com` | Override for local development |
 
 ## Development
 
-Run the server directly for testing:
-
 ```bash
-AFRICA_API_KEY=your-key python server.py
-```
+git clone https://github.com/africa-api/africa-api-mcp.git
+cd africa-api-mcp
+npm install
+npm run build
 
-Or with the MCP inspector:
+# Run directly
+AFRICA_API_KEY=your-key node dist/index.js
 
-```bash
-AFRICA_API_KEY=your-key mcp dev server.py
+# Test with MCP inspector
+AFRICA_API_KEY=your-key npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
 ## License

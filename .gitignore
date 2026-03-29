@@ -1,10 +1,5 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
 dist/
-build/
-.env
-.venv/
-venv/
 node_modules/
+.env
 .DS_Store
+*.tsbuildinfo
