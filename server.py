@@ -18,6 +18,10 @@ from mcp.server.fastmcp import FastMCP
 BASE_URL = os.environ.get("AFRICA_API_BASE_URL", "https://api.africa-api.com")
 API_KEY = os.environ.get("AFRICA_API_KEY", "")
 
+if not API_KEY:
+    import sys
+    print("Warning: AFRICA_API_KEY not set. Authenticated endpoints will fail.", file=sys.stderr)
+
 mcp = FastMCP(
     "Africa API",
     instructions="Access comprehensive African data — countries, indicators, markets, trade, government, elections, and policies for all 54 African nations.",
@@ -39,6 +43,8 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict:
     clean = {k: v for k, v in (params or {}).items() if v is not None}
     async with httpx.AsyncClient(base_url=BASE_URL, timeout=30) as client:
         resp = await client.get(path, params=clean, headers=_headers())
+        if resp.status_code in (401, 403):
+            return {"error": "Authentication failed. Check that AFRICA_API_KEY is set and valid."}
         resp.raise_for_status()
         return resp.json()
 
