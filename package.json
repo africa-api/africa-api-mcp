@@ -1,6 +1,7 @@
 {
   "name": "africa-api-mcp",
-  "version": "0.1.0",
+  "mcpName": "io.github.africa-api/africa-api-mcp",
+  "version": "0.1.1",
   "description": "MCP server for Africa API — access data on all 54 African countries through Claude",
   "main": "dist/index.js",
   "bin": {
