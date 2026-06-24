@@ -480,6 +480,26 @@ server.tool(
 );
 
 server.tool(
+  "get_index_history",
+  "Get the main stock-index level history for an exchange (e.g. NGX All-Share, JSE All Share, BRVM Composite) — index value plus total deals, volume, traded value and market cap",
+  {
+    exchange_code: z.string().describe('Exchange code (e.g. "NGX", "JSE", "BRVM")'),
+    start_date: z.string().optional().describe("Start date (YYYY-MM-DD)"),
+    end_date: z.string().optional().describe("End date (YYYY-MM-DD)"),
+    limit: z.number().int().min(1).max(5000).default(365).describe("Max data points"),
+  },
+  READ_ONLY,
+  async ({ exchange_code, start_date, end_date, limit }) => ({
+    content: [
+      {
+        type: "text" as const,
+        text: await apiGet(`/v1/markets/exchanges/${exchange_code}/index/history`, { start_date, end_date, limit }),
+      },
+    ],
+  }),
+);
+
+server.tool(
   "get_fx_rates",
   "Get current FX rates for African currencies against a base currency",
   {
