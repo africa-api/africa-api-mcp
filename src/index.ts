@@ -86,14 +86,56 @@ async function apiGet(path: string, params?: Record<string, unknown>): Promise<s
 
 const server = new McpServer({
   name: "Africa API",
-  version: "0.1.0",
+  version: "0.3.0",
 });
+
+// Register tools through a wrapper that attaches `structuredContent` (the parsed
+// JSON object) alongside the text response, so clients that support structured
+// output get machine-readable data without re-parsing a string. No outputSchema
+// is declared (the SDK then skips validation and passes structuredContent
+// through as-is), which keeps it robust across heterogeneous API responses.
+// Handler errors throw and bypass this, surfacing as isError via the SDK.
+const registerRaw = server.tool.bind(server) as (
+  name: string,
+  description: string,
+  paramsSchema: unknown,
+  annotations: unknown,
+  cb: unknown,
+) => void;
+
+function tool(
+  name: string,
+  description: string,
+  paramsSchema: z.ZodRawShape,
+  annotations: typeof READ_ONLY,
+  cb: (args: any, extra: any) => Promise<{ content: Array<{ type: string; text?: string }> }>,
+): void {
+  registerRaw(name, description, paramsSchema, annotations, async (args: any, extra: any) => {
+    const res = (await cb(args, extra)) as {
+      content: Array<{ type: string; text?: string }>;
+      isError?: boolean;
+      structuredContent?: unknown;
+    };
+    const first = res.content?.[0];
+    if (first?.type === "text" && typeof first.text === "string" && !res.isError) {
+      try {
+        const parsed = JSON.parse(first.text);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          res.structuredContent = parsed;
+        }
+      } catch {
+        // Response is not JSON (shouldn't happen for API data) — leave text-only.
+      }
+    }
+    return res;
+  });
+}
 
 // ===================================================================
 // COUNTRIES
 // ===================================================================
 
-server.tool(
+tool(
   "list_countries",
   "List all 54 African countries with key facts (capital, region, area, currencies, languages)",
   {
@@ -118,7 +160,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_country",
   "Get detailed information about a specific African country including coordinates, borders, currencies, and languages",
   {
@@ -130,7 +172,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_country_profile",
   "Get a curated profile for a country — key macro, demographic, and economic indicators",
   {
@@ -142,7 +184,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_country_signals",
   "Get real-time signals for a country — macro snapshot, market data, FX rates, power status, humanitarian alerts",
   {
@@ -158,7 +200,7 @@ server.tool(
 // INDICATORS & DATA
 // ===================================================================
 
-server.tool(
+tool(
   "list_indicators",
   "List all available data indicators (127+) across categories like GDP, population, health, education, agriculture, energy, climate",
   {
@@ -172,7 +214,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_indicator",
   "Get detailed metadata about a specific indicator including description, unit, source, and available years",
   {
@@ -184,7 +226,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_indicator_rankings",
   "Rank African countries by a specific indicator for a given year — great for comparisons",
   {
@@ -205,7 +247,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "query_data",
   "Query time-series observations for any combination of countries and indicators",
   {
@@ -231,7 +273,7 @@ server.tool(
 // GEOGRAPHIES
 // ===================================================================
 
-server.tool(
+tool(
   "list_geographies",
   "List geographical entities — continents, regions, subregions, and countries in a hierarchy",
   {
@@ -251,7 +293,7 @@ server.tool(
 // GOVERNMENT
 // ===================================================================
 
-server.tool(
+tool(
   "get_government_overview",
   "Get a government overview — current head of state, head of government, and cabinet summary",
   {
@@ -263,7 +305,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "search_leaders",
   "Search African heads of state and government — current and historical",
   {
@@ -278,7 +320,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_leader",
   "Get detailed information about a specific leader including biography, terms, and political party",
   {
@@ -290,7 +332,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "list_government_terms",
   "List leadership terms — who governed which country and when",
   {
@@ -308,7 +350,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_cabinet",
   "Get the current cabinet for a country — ministers, deputy ministers, and key officials",
   {
@@ -320,7 +362,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "list_cabinet_members",
   "Search cabinet members across African governments",
   {
@@ -343,7 +385,7 @@ server.tool(
 // ELECTIONS
 // ===================================================================
 
-server.tool(
+tool(
   "list_elections",
   "List elections across Africa — filter by country, scope, status, and year range",
   {
@@ -360,7 +402,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_upcoming_elections",
   "Get upcoming elections across Africa sorted by date",
   {
@@ -372,7 +414,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_country_elections",
   "Get an election overview for a country — recent and upcoming elections with results",
   {
@@ -385,7 +427,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_election",
   "Get detailed information about a specific election",
   {
@@ -397,7 +439,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_election_results",
   "Get results for a specific election — candidates, parties, and vote counts",
   {
@@ -414,7 +456,7 @@ server.tool(
 // MARKETS
 // ===================================================================
 
-server.tool(
+tool(
   "list_exchanges",
   "List African stock exchanges — NGX, JSE, BRVM, Casablanca, etc.",
   {
@@ -427,7 +469,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_exchange",
   "Get details about a specific stock exchange",
   {
@@ -439,7 +481,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "list_tickers",
   "Search listed securities (equities) across African exchanges",
   {
@@ -455,7 +497,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_ticker",
   "Get details about a specific listed security",
   {
@@ -468,7 +510,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_ticker_history",
   "Get price history (OHLC + volume) for a listed security",
   {
@@ -489,7 +531,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_index_history",
   "Get the main stock-index level history for an exchange (e.g. NGX All-Share, JSE All Share, BRVM Composite) — index value plus total deals, volume, traded value and market cap",
   {
@@ -509,7 +551,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_fx_rates",
   "Get current FX rates for African currencies against a base currency",
   {
@@ -524,7 +566,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_fx_rate_history",
   "Get historical FX rate data for a currency pair",
   {
@@ -549,7 +591,7 @@ server.tool(
 // TRADE
 // ===================================================================
 
-server.tool(
+tool(
   "get_trade_overview",
   "Get a trade overview — total exports/imports, top partners, top products, and trends",
   {
@@ -569,7 +611,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_trade_flows",
   "Query bilateral trade flows between countries — exports and imports with values",
   {
@@ -588,7 +630,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_trade_partners",
   "Get top trading partners for a country",
   {
@@ -605,7 +647,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_trade_products",
   "Get top traded products for a country — what it exports and imports",
   {
@@ -626,7 +668,7 @@ server.tool(
 // POLICIES
 // ===================================================================
 
-server.tool(
+tool(
   "list_policies",
   "Search government policies, laws, and regulations across Africa",
   {
@@ -647,7 +689,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_policy",
   "Get detailed information about a specific policy, law, or regulation",
   {
@@ -659,7 +701,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_country_policies",
   "Get a policy overview for a country — recent and notable policies grouped by type",
   {
@@ -672,7 +714,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_country_policy_timeline",
   "Get a chronological policy timeline for a country",
   {
@@ -687,7 +729,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "list_policy_events",
   "List policy lifecycle events — when policies were announced, adopted, amended, repealed",
   {
@@ -706,7 +748,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_policy_events",
   "Get all lifecycle events for a specific policy",
   {
@@ -723,7 +765,7 @@ server.tool(
 // SOURCES
 // ===================================================================
 
-server.tool(
+tool(
   "list_sources",
   "List all data sources — World Bank, UN agencies, central banks, exchanges, etc.",
   {},
@@ -733,7 +775,7 @@ server.tool(
   }),
 );
 
-server.tool(
+tool(
   "get_source",
   "Get details about a specific data source — description, URL, coverage, and update frequency",
   {
@@ -749,7 +791,7 @@ server.tool(
 // PLATFORM
 // ===================================================================
 
-server.tool(
+tool(
   "get_platform_info",
   "Get Africa API platform version and status",
   {},
