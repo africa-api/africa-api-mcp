@@ -21,10 +21,11 @@ if (!API_KEY) {
   console.error("Warning: AFRICA_API_KEY not set. Authenticated endpoints will fail.");
 }
 
-// Safety annotations — all tools are read-only
+// Safety annotations — every tool is a read-only, idempotent GET against the API.
 const READ_ONLY = {
   readOnlyHint: true,
   destructiveHint: false,
+  idempotentHint: true,
   openWorldHint: true,
 } as const;
 
@@ -48,26 +49,35 @@ async function apiGet(path: string, params?: Record<string, unknown>): Promise<s
     headers["Authorization"] = `Bearer ${API_KEY}`;
   }
 
-  const resp = await fetch(url.toString(), { headers });
+  // Throw on failure so the SDK surfaces it as a tool error (isError: true)
+  // rather than the agent mistaking an error payload for a successful result.
+  let resp: Response;
+  try {
+    resp = await fetch(url.toString(), { headers });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(`Could not reach the Africa API at ${BASE_URL}: ${detail}. Check network connectivity.`);
+  }
 
   if (resp.status === 401 || resp.status === 403) {
-    return JSON.stringify(
-      { error: "Authentication failed. Check that AFRICA_API_KEY is set and valid." },
-      null,
-      2,
+    throw new Error(
+      `Authentication failed (HTTP ${resp.status}). Set a valid AFRICA_API_KEY — get a free key at https://africa-api.com/dashboard.`,
     );
   }
 
   if (!resp.ok) {
-    return JSON.stringify(
-      { error: `API returned ${resp.status}: ${resp.statusText}` },
-      null,
-      2,
-    );
+    let body = "";
+    try {
+      body = (await resp.text()).slice(0, 300);
+    } catch {
+      // ignore: body is best-effort context for the error message
+    }
+    throw new Error(`Africa API returned HTTP ${resp.status} ${resp.statusText} for ${path}${body ? `: ${body}` : ""}`);
   }
 
+  // Compact JSON keeps responses token-efficient for the model's context.
   const data = await resp.json();
-  return JSON.stringify(data, null, 2);
+  return JSON.stringify(data);
 }
 
 // ---------------------------------------------------------------------------
