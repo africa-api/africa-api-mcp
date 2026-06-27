@@ -8,9 +8,17 @@ An [MCP](https://modelcontextprotocol.io) server that gives Claude direct access
 
 Sign up at [africa-api.com](https://africa-api.com) and create an API key from your dashboard.
 
-### 2. Connect to Claude
+### 2. Connect your client
 
-**Claude Desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+The server runs on demand via `npx` — **nothing to install or host**. Pick your client:
+
+**Claude Code** (one command):
+
+```bash
+claude mcp add africa-api -e AFRICA_API_KEY=your-api-key-here -- npx -y africa-api-mcp
+```
+
+**Claude Desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows), then restart:
 
 ```json
 {
@@ -18,31 +26,21 @@ Sign up at [africa-api.com](https://africa-api.com) and create an API key from y
     "africa-api": {
       "command": "npx",
       "args": ["-y", "africa-api-mcp"],
-      "env": {
-        "AFRICA_API_KEY": "your-api-key-here"
-      }
+      "env": { "AFRICA_API_KEY": "your-api-key-here" }
     }
   }
 }
 ```
 
-**Claude Code** — add to `~/.claude/settings.json`:
+**Cursor** — add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (per project) with the same `mcpServers` block as above.
 
-```json
-{
-  "mcpServers": {
-    "africa-api": {
-      "command": "npx",
-      "args": ["-y", "africa-api-mcp"],
-      "env": {
-        "AFRICA_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
+**VS Code** (Copilot agent mode) — one command:
+
+```bash
+code --add-mcp '{"name":"africa-api","command":"npx","args":["-y","africa-api-mcp"],"env":{"AFRICA_API_KEY":"your-api-key-here"}}'
 ```
 
-Restart Claude and you're ready to go. No install step needed — `npx` handles it automatically.
+Any other MCP client works with the same `npx -y africa-api-mcp` command plus the `AFRICA_API_KEY` environment variable. The server is also listed in the [MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.africa-api/africa-api-mcp`.
 
 ## What You Can Ask Claude
 
@@ -60,21 +58,21 @@ Once connected, Claude can answer questions like:
 
 ## Available Tools
 
-**40 tools** across 9 domains:
+**41 tools** across 9 domains:
 
 | Domain | Tools | What It Covers |
 |--------|-------|----------------|
 | **Countries** | 4 | Country details, profiles, real-time signals for all 54 nations |
-| **Indicators & Data** | 4 | 127+ indicators (GDP, population, health, education, etc.), time-series queries, country rankings |
+| **Indicators & Data** | 4 | 200+ indicators (GDP, population, health, energy, trade, etc.), time-series queries, country rankings |
 | **Government** | 6 | Heads of state, cabinets, leadership terms — current and historical |
 | **Elections** | 5 | Election results, upcoming elections, country overviews |
-| **Markets** | 7 | Stock exchanges, listed securities, price history, FX rates |
+| **Markets** | 8 | Stock exchanges, index levels, listed securities, price history, FX rates |
 | **Trade** | 4 | Bilateral trade flows, top partners, product breakdowns |
 | **Policies** | 6 | Laws, regulations, policy timelines, lifecycle events |
-| **Sources** | 2 | Data provenance — World Bank, UN, central banks, etc. |
+| **Sources & platform** | 3 | Data provenance and platform info — World Bank, IMF, UN, Ember, central banks |
 | **Geographies** | 1 | Continent / region / subregion hierarchy |
 
-All tools are **read-only** with proper MCP safety annotations.
+All tools are **read-only** (annotated `readOnly` + `idempotent`) and return both human-readable text and **structured JSON output** for programmatic clients.
 
 ## Configuration
 
