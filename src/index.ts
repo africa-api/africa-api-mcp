@@ -86,7 +86,7 @@ async function apiGet(path: string, params?: Record<string, unknown>): Promise<s
 
 const server = new McpServer({
   name: "Africa API",
-  version: "0.3.0",
+  version: "0.3.1",
 });
 
 // Register tools through a wrapper that attaches `structuredContent` (the parsed
@@ -458,7 +458,7 @@ tool(
 
 tool(
   "list_exchanges",
-  "List African stock exchanges — NGX, JSE, BRVM, Casablanca, etc.",
+  "List African stock exchanges. Live equity/ticker data is available for NGX (Nigeria), JSE (South Africa) and CSE (Casablanca); other exchanges are listed with metadata only.",
   {
     country_code: z.string().optional().describe("Filter by country"),
     limit: z.number().int().min(1).max(500).default(100).describe("Max results"),
@@ -473,7 +473,7 @@ tool(
   "get_exchange",
   "Get details about a specific stock exchange",
   {
-    exchange_code: z.string().describe('Exchange code (e.g. "NGX", "JSE", "BRVM")'),
+    exchange_code: z.string().describe('Exchange code (e.g. "NGX", "JSE", "CSE")'),
   },
   READ_ONLY,
   async ({ exchange_code }) => ({
@@ -533,9 +533,9 @@ tool(
 
 tool(
   "get_index_history",
-  "Get the main stock-index level history for an exchange (e.g. NGX All-Share, JSE All Share, BRVM Composite) — index value plus total deals, volume, traded value and market cap",
+  "Get the main stock-index level history for an exchange (e.g. NGX All-Share, JSE All Share, MASI for Casablanca) — index value plus total deals, volume, traded value and market cap",
   {
-    exchange_code: z.string().describe('Exchange code (e.g. "NGX", "JSE", "BRVM")'),
+    exchange_code: z.string().describe('Exchange code (e.g. "NGX", "JSE", "CSE")'),
     start_date: z.string().optional().describe("Start date (YYYY-MM-DD)"),
     end_date: z.string().optional().describe("End date (YYYY-MM-DD)"),
     limit: z.number().int().min(1).max(5000).default(365).describe("Max data points"),
